@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: order
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: CONFIG
+      profile: dev
+      label: master
+    stream:
+      bindings:
+        input:
+          group: order
+          content-type: application/json
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8888/eureka/
+management:
+  endpoints:
+    web:
+      exposure:
+        include: 'refresh'
+eid:
+  list: 456,123,789
+  redis:
+    host: localhost
+    port: 6379

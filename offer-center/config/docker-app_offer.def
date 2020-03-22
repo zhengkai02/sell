@@ -1,8 +1,0 @@
-#!/bin/bash
-
-APP=("svr")
-
-svr=(
-     "nohup java -DAPP_NAME=offer -jar -Dspring.profiles.active=offer /opt/oscarmall/offer-exec.jar --spring.config.location=/opt/oscarmall/config/ > /opt/oscarmall/log/offer.log &"
-     "APP_NAME=offer"
-    )

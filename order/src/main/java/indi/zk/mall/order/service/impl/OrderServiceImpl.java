@@ -104,8 +104,13 @@ public class OrderServiceImpl implements OrderService {
             throw new OrderException(ResultEnum.ORDER_NOT_EXIST);
         }
         //2.判断订单状态
+        OrderMaster orderMaster = optionalOrderMaster.get();
+        if (OrderStatusEnum.NEW.getCode() != orderMaster.getOrderStatus()){
+            throw new OrderException(ResultEnum.ORDER_STATUS_ERROR);
+        }
         //3.修改订单状态完结
-
+        orderMaster.setOrderStatus(OrderStatusEnum.FINISHED.getCode());
+        orderMasterRepository.save(orderMaster);
         return null;
     }
 }

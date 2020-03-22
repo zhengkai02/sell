@@ -17,6 +17,7 @@ import indi.zk.mall.order.utils.KeyUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -97,7 +98,7 @@ public class OrderServiceImpl implements OrderService {
      * @return
      */
     @Override
-    public OrderDetail finish(String orderId) {
+    public OrderDTO finish(String orderId) {
         //1.查询订单
         Optional<OrderMaster> optionalOrderMaster = orderMasterRepository.findById(orderId);
         if (!optionalOrderMaster.isPresent()) {
@@ -105,12 +106,21 @@ public class OrderServiceImpl implements OrderService {
         }
         //2.判断订单状态
         OrderMaster orderMaster = optionalOrderMaster.get();
-        if (OrderStatusEnum.NEW.getCode() != orderMaster.getOrderStatus()){
+        if (OrderStatusEnum.NEW.getCode() != orderMaster.getOrderStatus()) {
             throw new OrderException(ResultEnum.ORDER_STATUS_ERROR);
         }
         //3.修改订单状态完结
         orderMaster.setOrderStatus(OrderStatusEnum.FINISHED.getCode());
         orderMasterRepository.save(orderMaster);
-        return null;
+
+        //4. 查询订单详情
+        List<OrderDetail> orderDetailList = orderDetailRepository.findByOrderId(orderId);
+        if (CollectionUtils.isEmpty(orderDetailList)) {
+            throw new OrderException(ResultEnum.ORDER_DETAIL_NOT_EXIST);
+        }
+        OrderDTO orderDTO = new OrderDTO();
+        BeanUtils.copyProperties(orderMaster, orderDTO);
+        orderDTO.setOrderDetailList(orderDetailList);
+        return orderDTO;
     }
 }

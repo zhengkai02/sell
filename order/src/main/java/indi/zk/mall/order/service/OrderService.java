@@ -21,5 +21,5 @@ public interface OrderService {
      * @param orderId
      * @return
      */
-    OrderDetail finish(String orderId);
+    OrderDTO finish(String orderId);
 }

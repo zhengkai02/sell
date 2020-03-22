@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.ProdGoodsGroupRelMapper">
+
+    <select id="listProdGoodsByPackageId" resultType="com.iwhalecloud.retail.offer.entity.ProdGoods">
+        select pg.*
+          from tbl_prod_goods_group_rel pgpr
+          join tbl_prod_goods pg on pg.goods_id = pgpr.goods_id
+         where pgpr.state = 'A'
+         and pgpr.package_id = #{packageId}
+    </select>
+
+</mapper>

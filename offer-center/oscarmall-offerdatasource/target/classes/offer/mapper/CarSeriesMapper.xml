@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.CarSeriesMapper">
+
+    <select id="selectListByCarBrandIdAndCarSepcId" resultType="com.iwhalecloud.retail.offer.dto.resp.CarSeriesResp">
+        select * from tbl_car_series
+        where car_spec_id = #{carSpecId}
+        and car_brand_id = #{carBrandId}
+        and state = 'A'
+    </select>
+</mapper>

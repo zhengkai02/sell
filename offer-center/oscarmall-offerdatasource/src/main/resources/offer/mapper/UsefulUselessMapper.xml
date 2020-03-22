@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.UsefulUselessMapper">
+
+
+    <select id="queryByObjTypeAndObjId" resultType="com.iwhalecloud.retail.offer.dto.resp.QueryUsefulUselessResp">
+        select a.type, a.create_time
+          from tbl_useful_useless a
+         where a.state = 'A'
+           and a.obj_id = #{req.objId}
+           and a.obj_type = #{req.objType}
+           and a.user_id = #{req.userId}
+        <if test="req.type != null and req.type != ''" >
+           and a.type = #{req.type}
+        </if>
+    </select>
+
+    <select id="countByObjTypeAndObjId" resultType="java.lang.Integer">
+        select count(1)
+          from tbl_useful_useless
+         where state = 'A'
+           and obj_type = #{req.objType}
+           and obj_id = #{req.objId}
+           and user_id = #{req.userId}
+           and tenant_id = #{req.tenantId}
+        <if test="req.type != null and req.type != ''" >
+           and type = #{req.type}
+        </if>
+    </select>
+
+    <update id="updateStateByObjTypeAndObjId">
+        update tbl_useful_useless
+           set state = 'X', modify_time = now(), modify_by = #{req.userId}
+         where obj_id = #{req.objId}
+           and obj_type = #{req.objType}
+           and user_id = #{req.userId}
+    </update>
+
+</mapper>

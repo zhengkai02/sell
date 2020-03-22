@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: datasource
+  cloud:
+    consul:
+      host: localhost
+
+

@@ -1,0 +1,123 @@
+project:
+  name: oscarMall
+  env: ft
+  version: v3
+
+server:
+  port: 8081
+spring:
+  application:
+    name: oscarmall-dev-offer-v0-snapshot
+  cloud:
+    consul:
+      host: localhost
+      discovery:
+        prefer-ip-address: true
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/oscar_mall_offer
+    username: root
+    password: admin123
+  redis:
+    port: 7381
+    host: localhost
+    password:
+    cluster:
+      nodes: localhost:6379,localhost:6380,localhost:6381
+      enabled: true
+    connectionTimeout: 10000
+    soTimeout: 10000
+    maxIdle: 30
+    maxTotal: 30
+    maxWaitMilli: 10000
+    minIdle: 15
+    numTestsPerEvictionRun: 3
+    testOnBorrow: false
+    testOnReturn: true
+    testWhileIdle: true
+    timeBetweenEvictionRunsMillis: 30000
+    minEvictableIdleTimeMillis: 60000
+  rabbitmq:
+    host: 172.16.22.114
+    username: admin
+    password: admin
+    virtualHost: /test
+    listener:
+      simple:
+        acknowledge-mode: auto
+
+# 分布式文件系统FDFS配置
+fdfs:
+  http_anti_steal_token: true #token 防盗链功能
+  http_secret_key: FastDFS1234567890 # 密钥
+  showUrl: http://172.16.22.153:80/
+  soTimeout: 1500 #socket连接超时时长
+  connectTimeout: 600 #连接tracker服务器超时时长
+  thumbImage: #缩略图生成参数，可选
+    width: 150
+    height: 150
+  trackerList: #TrackerList参数,支持多个，我这里只有一个，如果有多个在下方加- x.x.x.x:port :NRetail/NRetail
+    - 172.16.22.153:22122
+  pool:
+    jmx-enabled: false
+  suffix:  #配置允许附件上传的后缀
+    allowUpload: bmp,jpg,png,tif,gif,pcx,tga,exif,fpx,svg,psd,cdr,pcd,dxf,ufo,eps,ai,raw,WMF,webp,avi、wmv、mpeg、mp4、mov、mkv、flv、f4v、m4v、rmvb、rm、3gp、dat、ts、mts、vob,xls,xlsx
+
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 10000
+
+ribbon:
+  ConnectTimeout: 10000
+  ReadTimeout: 10000
+
+errorCode:
+  prefix: ""
+
+sc:
+  rest:
+    product:
+      name: oscarmall-dev-product-v0-snapshot
+      path: /product
+oscar:
+  rest:
+    coupon:
+      name: oscarmall-dev-coupon-v0-snapshot
+      path: /coupon
+    content:
+      name: oscarmall-dev-content-v0-snapshot
+      path: /content
+    user:
+      name: oscarboss-dev-oscarbossopenapi-v0-snapshot
+      path: /user
+    invoice:
+      name: aep-local-v1-invoice-service
+      path:
+    order:
+      name: oscarmall-dev-order-v0-snapshot
+      path: /order
+    operation:
+      name: oscarmall-dev-operation-v0-snapshot
+      path: /operation
+
+usefuluseless:
+  redisNum:
+    max: 10
+
+logging:
+  config: config/logback.xml
+
+es:
+  enabled: true
+  cluster:
+    nodes: 10.45.66.129,172.16.22.51:9200,172.16.22.51
+evaluation:
+  audit:
+    flag: N
+
+swagger:
+  show: true

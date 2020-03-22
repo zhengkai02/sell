@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.AttrMapper">
+
+    <select id="queryAttrList" resultType="com.iwhalecloud.retail.offer.entity.Attr">
+        select *
+      	  from tbl_attr a where 1 = 1 and a.state <![CDATA[<>]]> 'X'
+      	  <if test="request.attrCode != null and request.attrCode != ''">
+              and lower(a.attr_code) like lower(concat(concat('%', #{request.attrCode}), '%'))
+          </if>
+          <if test="request.attrName != null and request.attrName != ''">
+              and lower(a.attr_name) like lower(concat(concat('%', #{request.attrName}), '%'))
+          </if>
+          <if test="request.hidePrivateAttr != null and request.hidePrivateAttr == 'Y'.toString()">
+              and a.private_obj_id is null
+          </if>
+      order by priority
+    </select>
+
+    <select id="queryOutAttrListByGoodsId" resultType="com.iwhalecloud.retail.offer.entity.Attr">
+        select a.*
+      	  from tbl_attr a
+      	  where a.state <![CDATA[<>]]> 'X' and a.attr_id not in (
+      	  select p.attr_id from tbl_prod_goods_attr_value p
+      	  where p.state = 'A'
+      	  and p.goods_id = #{goodsId}
+      	  )
+      order by a.priority
+    </select>
+
+    <select id="selectByCode" resultType="com.iwhalecloud.retail.offer.entity.Attr">
+        select *
+      	  from tbl_attr where state <![CDATA[<>]]> 'X'
+          and attr_code = #{attrCode}
+    </select>
+
+    <select id="selectByCodeNoTenantId" resultType="com.iwhalecloud.retail.offer.entity.Attr">
+        select *
+        from tbl_attr where state <![CDATA[<>]]> 'X'
+        and attr_code = #{attrCode}
+    </select>
+
+
+    <select id="qryAttrListByFilter" resultType="com.iwhalecloud.retail.offer.dto.resp.GoodsCatAttrResp">
+        select b.attr_id, b.attr_name, b.attr_code, b.attr_type, b.input_type, b.nullable, b.comments, b.private_type, b.private_obj_id, b.is_reserved
+          from tbl_attr b
+         where b.state != 'X'
+        <choose>
+            <when test="req.catId != null and req.catId != ''">
+                and b.attr_id not in (select attr_id from tbl_prod_goods_cat_attr_value where state = 'A' and cat_id = #{req.catId})
+            </when>
+            <otherwise>
+                and b.attr_id not in (select attr_id from tbl_prod_goods_attr_value where state = 'A' and goods_id = #{req.goodsId})
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="req.sku != null and req.sku != ''">
+                and b.attr_type = 'C'
+            </when>
+            <otherwise>
+                and b.attr_type != 'C'
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="queryAttrArray" resultType="com.iwhalecloud.retail.offer.entity.Attr">
+        select * from tbl_attr a where 1 = 1 and a.state <![CDATA[<>]]> 'X'
+        <if test="request.attrIds != null and request.attrIds.size() > 0">
+            and a.attr_id in
+            <foreach collection="request.attrIds" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="request.tenantId != null and request.tenantId != ''">
+            and a.tenant_id = #{request.tenantId}
+        </if>
+    </select>
+</mapper>

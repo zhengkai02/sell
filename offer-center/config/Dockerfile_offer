@@ -1,0 +1,14 @@
+FROM 10.45.80.1/public/centos7-java-base:openjdk1.8.0.151
+
+RUN mkdir /opt/oscarmall    \
+    && mkdir /opt/oscarmall/log    \
+	&& mkdir /opt/oscarmall/config
+	
+COPY ./config/docker-app_offer.def  /root/docker-app.def
+ADD ./oscarmall-install/target/offer-exec.jar  /opt/oscarmall/offer-exec.jar
+
+WORKDIR /opt/oscarmall
+
+
+ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "docker-entrypoint.sh"]
+CMD ["start"]

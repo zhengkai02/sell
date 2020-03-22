@@ -1,0 +1,771 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.ProdGoodsMapper">
+    <sql id="Base_Column_List" >
+        goods_id, name, sn, brand_id, type_id, weight, state, intro, price, cost,
+        mktprice, create_time, modify_time, view_count, buy_count, sord, tax,
+        simple_name, min_nim,  search_key, selling_point, region_id, region_name,
+        marketing_begin_time, marketing_end_time, stock_qty,product_code,duplicate_flag,max_buy_count,
+        store_id, is_package,dispatch_order_id, thumbnail, after_sale, tenant_id, create_by, modify_by,
+        evaluation_rate, evaluation_count, is_recommend, turn_on_sku, care_flag, adj_buy_count, evaluate_audit_mode,
+        adj_evaluation_rate,adj_evaluation_count,is_certification
+    </sql>
+
+    <select id="queryGoodsForPage" resultType="com.iwhalecloud.retail.offer.dto.ProdGoodsDTO" parameterType="com.iwhalecloud.retail.offer.dto.req.ProdGoodsQueryReq">
+        select
+        t.goods_id, t.name, t.sn, t.brand_id, t.type_id, t.weight, t.state, t.intro, t.price, t.cost,
+        t.mktprice, t.create_time, t.modify_time, t.view_count, t.buy_count, t.sord,
+        t.simple_name, t.min_nim,  t.search_key, t.selling_point, t.region_id, t.region_name,
+        t.marketing_begin_time, t.marketing_end_time, t.stock_qty, t.product_code, t.duplicate_flag, t.max_buy_count,
+        t.store_id, t.is_package, t.dispatch_order_id, t.thumbnail, t.after_sale, t.tenant_id, t.create_by, t.modify_by,
+        p.type_name,
+        f.name sale_cat_name,
+        s.store_name
+        from tbl_prod_goods t
+        left join tbl_prod_goods_type p on t.type_id = p.type_id
+        left join tbl_store s on t.store_id = s.store_id
+        left join
+        (select d.goods_id, d.cat_id, e.name, e.cat_type
+        from tbl_prod_goods_cat_mem d, tbl_prod_goods_cat e
+        where d.cat_id = e.cat_id and e.cat_type = 'S' and e.active_flag != 'Y') f on t.goods_id = f.goods_id
+        where t.state <![CDATA[<>]]> 'X'
+        and p.state = 'A'
+        <if test="req.excludeIds != null and req.excludeIds.size() > 0" >
+            and t.goods_id not in
+            <foreach item="item" index="index" open="(" separator="," close=")" collection="req.excludeIds">
+                #{item}
+            </foreach>
+        </if>
+        <if test="req.ids != null and req.ids.size() > 0" >
+            and t.goods_id in
+            <foreach item="item" index="index" open="(" separator="," close=")" collection="req.ids">
+                #{item}
+            </foreach>
+        </if>
+        <if test="req.searchKey != null and req.searchKey != ''">
+            and lower(t.name) like lower(concat(concat('%', #{req.searchKey }), '%'))
+        </if>
+        <if test="req.typeIds != null and req.typeIds.size() > 0">
+            and t.type_id not in
+            <foreach item="item" index="index" open="(" separator="," close=")" collection="req.typeIds">
+                #{item}
+            </foreach>
+        </if>
+        <if test="req.brandId != null and req.brandId != ''">
+            and t.brand_id = #{req.brandId}
+        </if>
+        <if test="req.states != null and req.states.size() > 0">
+            and t.state in
+            <foreach item="item" index="index" open="(" separator="," close=")" collection="req.states">
+                #{item}
+            </foreach>
+        </if>
+        <if test="req.contactChannelId != null and req.contactChannelId != ''" >
+            and t.goods_id in
+            (select goods_id from tbl_prod_goods_sales_condition where state = 'A' and sales_rule_id = 1 and obj_id = #{req.contactChannelId})
+        </if>
+        <if test="req.sortType != null">
+            order by ${req.sortType}
+        </if>
+    </select>
+
+    <select id="qryTargetGoodsList" resultType="com.iwhalecloud.retail.offer.dto.resp.QryGoodsCatMemListResp">
+        select f.cat_id sale_cat_id, f.name sale_cat_name, a.cat_mem_id, c.cat_id, b.goods_id, b.buy_count,
+        b.name, b.sn,  b.type_id, g.type_name, b.state, b.stock_qty, b.mktprice, b.price, b.marketing_begin_time, b.marketing_end_time
+        from tbl_prod_goods b left join
+        (select d.goods_id, d.cat_id, e.name, e.cat_type
+        from tbl_prod_goods_cat_mem d, prod_goods_cat e
+        where d.cat_id = e.cat_id and e.cat_type = 'S') f on b.goods_id = f.goods_id,
+        prod_goods_cat_mem a, prod_goods_cat c,prod_goods_type g
+        where b.goods_id = a.goods_id
+        and a.cat_id = c.cat_id
+        and b.type_id = g.type_id
+        and c.cat_type = 'M'
+        and b.state <![CDATA[<>]]> 'X'
+        <if test="request.ids != null" >
+            and b.goods_id not in
+            <foreach item="item" index="index" open="(" separator="," close=")" collection="request.ids">
+                #{item}
+            </foreach>
+        </if>
+        <if test="request.qt != null and request.qt.length() > 0 ">
+            and lower(b.name) like lower(concat(concat('%', #{request.qt}), '%'))
+            or  lower(b.sn) like lower(concat(concat('%', #{request.qt}), '%'))
+        </if>
+        order by b.create_time desc
+    </select>
+
+    <update id="goodsAudit">
+        <if test="goodsId != null">
+            update tbl_prod_goods
+            <set>
+                <if test="req.result == 1" >
+                    state = 'F',
+                </if>
+                <if test="req.result == 0" >
+                    state = 'D',
+                </if>
+                modify_time = DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%s'),
+                modify_by = #{modifyBy},
+
+            </set>
+            where 1 = 1
+            and goods_id = #{goodsId}
+        </if>
+    </update>
+    
+    <update id="goodsUnpublish">
+        <if test="goodsId != null">
+            update tbl_prod_goods
+            <set>
+                modify_time = DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%s'),
+                state = 'A',
+                modify_by = #{modifyBy}
+            </set>
+            where 1 = 1
+            and goods_id = #{goodsId}
+        </if>
+    </update>
+
+    <select id="queryGoodsList" resultType="com.iwhalecloud.retail.offer.dto.ProdGoodsDTO" parameterType="com.iwhalecloud.retail.offer.dto.req.ProdGoodsQueryReq">
+        select
+        <include refid="Base_Column_List"></include>
+        from tbl_prod_goods t where 1=1
+        and t.state <![CDATA[<>]]> 'X'
+        <if test="req.ids != null" >
+            and t.goods_id in
+            <foreach item="item" index="index" open="(" separator="," close=")" collection="req.ids">
+                #{item}
+            </foreach>
+        </if>
+        <if test="req.searchKey != null and req.searchKey != ''">
+            and lower(t.search_key) like lower(concat(concat('%', #{req.searchKey }), '%'))
+        </if>
+        <if test="req.typeIds != null" >
+            and t.type_id not in
+            <foreach item="item" index="index" open="(" separator="," close=")" collection="req.typeIds">
+                #{item}
+            </foreach>
+        </if>
+        <if test="req.brandId != null and req.brandId != ''">
+            and t.brand_id = #{req.brandId}
+        </if>
+        <if test="req.sortType != null">
+            order by ${req.sortType}
+        </if>
+    </select>
+
+    <select id="queryGoodsListNoTenantId" resultType="com.iwhalecloud.retail.offer.dto.ProdGoodsDTO" parameterType="com.iwhalecloud.retail.offer.dto.req.ProdGoodsQueryReq">
+        select
+        <include refid="Base_Column_List"></include>
+        from tbl_prod_goods t where 1=1
+        and t.state <![CDATA[<>]]> 'X'
+        <if test="req.ids != null" >
+            and t.goods_id in
+            <foreach item="item" index="index" open="(" separator="," close=")" collection="req.ids">
+                #{item}
+            </foreach>
+        </if>
+        <if test="req.searchKey != null and req.searchKey != ''">
+            and lower(t.search_key) like lower(concat(concat('%', #{req.searchKey }), '%'))
+        </if>
+        <if test="req.typeIds != null" >
+            and t.type_id not in
+            <foreach item="item" index="index" open="(" separator="," close=")" collection="req.typeIds">
+                #{item}
+            </foreach>
+        </if>
+        <if test="req.brandId != null and req.brandId != ''">
+            and t.brand_id = #{req.brandId}
+        </if>
+        <if test="req.sortType != null">
+            order by ${req.sortType}
+        </if>
+    </select>
+
+
+    <select id="queryProdGoodsListByIds" resultType="com.iwhalecloud.retail.offer.entity.ProdGoods" parameterType="com.iwhalecloud.retail.offer.dto.req.QryProdGoodsListReq">
+        select <include refid="Base_Column_List"></include> from tbl_prod_goods t where 1 = 1
+        <if test="req.goodsIds != null">
+            and t.goods_id in
+            <foreach collection="req.goodsIds" index="index" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    
+
+    <select id="qryGoodsBySn" resultType="com.iwhalecloud.retail.offer.entity.ProdGoods">
+        select
+        <include refid="Base_Column_List"></include>
+        from tbl_prod_goods
+        where sn = #{sn}
+
+        <if test="allFlag == null or allFlag == ''">
+            and state <![CDATA[<>]]> 'X'
+        </if>
+    </select>
+
+    <select id="selectByGoodsId" resultType="com.iwhalecloud.retail.offer.entity.ProdGoods">
+        select
+        <include refid="Base_Column_List"></include>
+        from tbl_prod_goods
+        where goods_id = #{goodsId}
+        <if test="allFlag == null or allFlag == ''">
+            and state <![CDATA[<>]]> 'X'
+        </if>
+    </select>
+
+    <select id="qryCPSPDetailByGoodsId" resultType="com.iwhalecloud.retail.offer.dto.resp.CpspQueryOfferDetailsResp">
+       select p.goods_id as offerId, p.name as offerName, p.sn as offerCode, p.simple_name, p.brand_id,
+              t.brand_name as brandName,p.state, p.mktprice as mktPrice, p.price
+         from tbl_prod_goods p
+         left join tbl_goods_brand t on t.brand_id = p.brand_id
+        where p.state != 'X'
+          and p.goods_id = #{req.offerId}
+    </select>
+
+    <update id="deleteProdGoods">
+        update tbl_prod_goods
+        set state = 'X',
+        modify_time = now(),
+        modify_by = #{modifyBy}
+        where goods_id = #{goodsId}
+    </update>
+
+    <update id="batchDeleteProdGoods">
+        update tbl_prod_goods
+        set state = 'X',
+        modify_time = now(),
+        modify_by = #{modifyBy}
+        where goods_id in
+        <foreach collection="goodsIdArray" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="batchPutOnProdGoods">
+        update tbl_prod_goods
+        set state = 'C',
+        modify_time = now(),
+        modify_by = #{modifyBy}
+        where goods_id in
+        <foreach collection="goodsIdArray" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="batchPullOffProdGoods">
+        update tbl_prod_goods
+        set state = 'E',
+        modify_time = now(),
+        modify_by = #{modifyBy}
+        where goods_id in
+        <foreach collection="goodsIdArray" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="queryGoodsNameByGoodsId" resultType="com.iwhalecloud.retail.offer.dto.resp.RightsGoodsResp">
+        select goods_id as offerId, name as offerName, thumbnail, simple_name as subhead, sn
+          from tbl_prod_goods
+         where goods_id in
+      <foreach collection="goodsIdList" item="item" separator="," open="(" close=")">
+               #{item}
+     </foreach>
+    </select>
+
+    <select id="qryOfferList" resultType="com.iwhalecloud.retail.offer.dto.client.resp.OfferQryResp">
+        select t.goods_id as offerId, t.name as offerName, t.sn as offerCode, t.intro as 'desc', t.type_id as offerType,
+               t.product_code as productCode, g.type_name as offerTypeName, s.cat_id as offerCatgId, s.name as offerCatgName,
+               t.evaluation_rate as evaluationRate, t.evaluation_count as evaluationCount,ifnull(t.care_flag,"N") care_flag,
+               t.state
+        from  tbl_prod_goods t
+        join tbl_prod_goods_type g on g.type_id = t.type_id
+        join tbl_prod_goods_cat_mem m on m.goods_id = t.goods_id
+        join tbl_prod_goods_cat s on s.cat_id = m.cat_id
+        where s.cat_type = 'S'
+        and g.state = 'A'
+        <if test="req.offerType != null">
+            and t.type_id in
+            <foreach item="item" index="index" collection="req.offerType" open="("  separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+         <if test="req.productCode != null and req.productCode != ''">
+            and t.product_code = #{req.productCode}
+         </if>
+         <if test="req.offerCatgId != null and req.offerCatgId != ''">
+            and t.goods_id in (
+                select c.goods_id from tbl_prod_goods_cat_mem where c.cat_id = #{req.offerCatgId}
+             )
+         </if>
+        <choose>
+            <when test="req.state != null and req.state != ''">
+                and t.state = #{req.state}
+            </when>
+            <otherwise>
+                and t.state != 'X'
+            </otherwise>
+        </choose>
+         <if test="req.offerName != null and req.offerName != ''">
+            and t.name in (
+             select p.name from tbl_prod_goods p where p.name like CONCAT('%', #{req.offerName}, '%')
+             )
+         </if>
+    </select>
+
+
+    <select id="qryOfferListNoTenantId" resultType="com.iwhalecloud.retail.offer.dto.client.resp.OfferQryResp">
+        select t.goods_id as offerId, t.name as offerName, t.sn as offerCode, t.intro as 'desc', t.type_id as offerType,
+               t.product_code as productCode, g.type_name as offerTypeName, s.cat_id as offerCatgId, s.name as offerCatgName,
+               t.evaluation_rate as evaluationRate, t.evaluation_count as evaluationCount,ifnull(t.care_flag,"N") care_flag,
+               t.state
+        from  tbl_prod_goods t
+        join tbl_prod_goods_type g on g.type_id = t.type_id
+        join tbl_prod_goods_cat_mem m on m.goods_id = t.goods_id
+        join tbl_prod_goods_cat s on s.cat_id = m.cat_id
+        where s.cat_type = 'S'
+        and s.active_flag != 'Y'
+        and g.state = 'A'
+        and m.state = 'A'
+        and s.state = 'A'
+        <if test="req.careFlag != null and req.careFlag != ''">
+            and t.care_flag = #{req.careFlag}
+        </if>
+        <if test="req.tenantId != null and req.tenantId != ''">
+            and t.tenant_id = #{req.tenantId}
+        </if>
+        <if test="req.offerType != null">
+            and t.type_id in
+            <foreach item="item" index="index" collection="req.offerType" open="("  separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="req.productCode != null and req.productCode != ''">
+            and t.product_code = #{req.productCode}
+        </if>
+        <if test="req.offerCatgId != null and req.offerCatgId != ''">
+            and t.goods_id in (
+            select c.goods_id from tbl_prod_goods_cat_mem c where c.state = 'A' and c.cat_id = #{req.offerCatgId}
+            )
+        </if>
+        <choose>
+            <when test="req.state != null and req.state != ''">
+                and t.state = #{req.state}
+            </when>
+            <otherwise>
+                and t.state != 'X'
+            </otherwise>
+        </choose>
+        <if test="req.offerName != null and req.offerName != ''">
+            and lower(t.name) like CONCAT('%', lower(#{req.offerName}), '%')
+        </if>
+    </select>
+
+    <select id="qryMobileOfferList" resultType="com.iwhalecloud.retail.offer.dto.client.resp.OfferMobileQryResp">
+        select distinct o.* from
+        ( select goods_id offer_id, name offer_name, sn offer_code,simple_name,mktPrice,price,
+         <![CDATA[ case when IFNULL(t.buy_count,0)+IFNULL(t.adj_buy_count,0)  <=0 then 0 else IFNULL(t.buy_count,0)+IFNULL(t.adj_buy_count,0) end ]]> buy_count,
+        thumbnail,type_id offer_type, marketing_begin_time,marketing_end_time,
+        <![CDATA[ case when  IFNULL(t.evaluation_count,0)+IFNULL(t.adj_evaluation_count,0) <= 0 then 0 else IFNULL(t.evaluation_count,0)+IFNULL(t.adj_evaluation_count,0) end ]]> evaluation_count,
+        <![CDATA[ case
+        when IFNULL(t.evaluation_rate,0) + IFNULL(t.adj_evaluation_rate,0) <= 0 then 0
+        when IFNULL(t.evaluation_rate,0) + IFNULL(t.adj_evaluation_rate,0) >= 100 then 100
+        else IFNULL(t.evaluation_rate,0) + IFNULL(t.adj_evaluation_rate,0)
+        end ]]> evaluation_rate,
+        t.tax
+        from  tbl_prod_goods t
+        where 1 = 1
+        <![CDATA[ and t.marketing_begin_time <= sysdate() ]]>
+        <![CDATA[ and (t.marketing_end_time is null or t.marketing_end_time > sysdate() )]]>
+        <if test="req.storeId != null and req.storeId != ''">
+            and t.store_id = #{req.storeId}
+        </if>
+        <if  test="req.catId == null and req.offerCode == null and req.offerId == null">
+            and t.state = 'C'
+        </if>
+        <if test="req.offerType != null and req.offerType != ''">
+            and t.type_id = #{req.offerType}
+        </if>
+
+        <if test="req.catId != null and req.catId != ''">
+            and t.goods_id in (select goods_id from tbl_prod_goods_cat_mem where cat_id = #{req.catId})
+        </if>
+        <if test="req.offerName != null and req.offerName != ''">
+            and t.name in (select p.name from tbl_prod_goods p where p.name like CONCAT('%', #{req.offerName}, '%'))
+        </if>
+        <if test="req.offerCode != null and req.offerCode != ''">
+            and t.sn = #{req.offerCode}
+        </if>
+        <if test="req.offerId != null and req.offerId != ''">
+            and t.goods_id = #{req.offerId}
+        </if>
+
+        <if test="req.offerIdList != null and req.offerIdList.size()>0">
+            and (t.goods_id in
+            <foreach collection="req.offerIdList" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+            <if test="req.offerTypeList != null and req.offerTypeList.size()>0">
+                or t.type_id in
+                <foreach collection="req.offerTypeList" item="index" open="(" separator="," close=")">
+                    #{index}
+                </foreach>
+            </if>
+            )
+        </if>
+        <if test="req.offerIdList == null or req.offerIdList.size() == 0 ">
+            <if test="req.offerTypeList != null and req.offerTypeList.size()>0">
+                and t.type_id in
+                <foreach collection="req.offerTypeList" item="index" open="(" separator="," close=")">
+                    #{index}
+                </foreach>
+            </if>
+        </if>
+        <if test="req.rows != null">
+            limit #{req.rows}
+        </if>
+        <choose>
+            <when test="req.recommend != null and req.recommend != ''">
+                and t.is_recommend = #{req.recommend}
+            </when>
+            <otherwise>
+                and t.is_recommend = 'N'
+            </otherwise>
+        </choose>
+        order by t.create_time desc ) o
+    </select>
+
+    <select id="qryMobileOfferPageList" resultType="com.iwhalecloud.retail.offer.dto.client.resp.OfferMobileQryResp">
+        select distinct o.offer_id, o.offer_name, o.offer_code, o.simple_name, o.mktPrice, o.price, o.state,
+                        o.buy_count, o.thumbnail, o.offer_type, o.marketing_begin_time, o.marketing_end_time,
+                        o.evaluation_count, o.evaluation_rate, o.tax
+        from
+        ( select goods_id offer_id, name offer_name, sn offer_code,simple_name,mktPrice,price,state,
+        <![CDATA[ case when IFNULL(t.buy_count,0)+IFNULL(t.adj_buy_count,0)  <=0 then 0 else IFNULL(t.buy_count,0)+IFNULL(t.adj_buy_count,0) end ]]> buy_count,
+        thumbnail,type_id offer_type, marketing_begin_time,marketing_end_time,
+        <![CDATA[ case when  IFNULL(t.evaluation_count,0)+IFNULL(t.adj_evaluation_count,0) <= 0 then 0 else IFNULL(t.evaluation_count,0)+IFNULL(t.adj_evaluation_count,0) end ]]> evaluation_count,
+        <![CDATA[ case
+        when IFNULL(t.evaluation_rate,0) + IFNULL(t.adj_evaluation_rate,0) <= 0 then 0
+        when IFNULL(t.evaluation_rate,0) + IFNULL(t.adj_evaluation_rate,0) >= 100 then 100
+        else IFNULL(t.evaluation_rate,0) + IFNULL(t.adj_evaluation_rate,0)
+        end ]]> evaluation_rate,
+        t.tax
+        from  tbl_prod_goods t
+        where 1 = 1
+        <![CDATA[ and t.marketing_begin_time <= sysdate() ]]>
+        <![CDATA[ and (t.marketing_end_time is null or t.marketing_end_time > sysdate() )]]>
+        <if test="req.storeId != null and req.storeId != ''">
+            and t.store_id = #{req.storeId}
+        </if>
+        <if  test="req.catId == null and req.offerCode == null and req.offerId == null">
+            and t.state = 'C'
+        </if>
+        <if test="req.offerType != null and req.offerType != ''">
+            and t.type_id = #{req.offerType}
+        </if>
+
+        <if test="req.catId != null and req.catId != ''">
+            and t.goods_id in (
+            select goods_id from tbl_prod_goods_cat_mem where state = 'A' and cat_id = #{req.catId}
+            )
+        </if>
+        <if test="req.offerName != null and req.offerName != ''">
+            and lower(t.name) like CONCAT('%', lower(#{req.offerName}), '%')
+        </if>
+        <if test="req.offerCode != null and req.offerCode != ''">
+            and t.sn = #{req.offerCode}
+        </if>
+        <if test="req.offerId != null and req.offerId != ''">
+            and t.goods_id = #{req.offerId}
+        </if>
+        <if test="req.contactChannelId != null and req.contactChannelId != ''">
+            and t.goods_id in (
+            select goods_id
+            from tbl_prod_goods_sales_condition
+            where state = 'A'
+            and sales_rule_id = 1
+            and obj_id = #{req.contactChannelId}
+            )
+        </if>
+        <if test="couponGoodsIds != null and couponGoodsIds.size()>0">
+            and (t.goods_id in
+            <foreach collection="couponGoodsIds" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+            <if test="offerTypes != null and offerTypes.size()>0">
+                or t.type_id in
+                <foreach collection="offerTypes" item="index" open="(" separator="," close=")">
+                    #{index}
+                </foreach>
+            </if>
+            )
+        </if>
+        <if test="couponGoodsIds == null or couponGoodsIds.size() == 0 ">
+            <if test="offerTypes != null and offerTypes.size()>0">
+                and t.type_id in
+                <foreach collection="offerTypes" item="index" open="(" separator="," close=")">
+                    #{index}
+                </foreach>
+            </if>
+        </if>
+        <!--<if test="salesConditionIds != null and salesConditionIds.size()>0">-->
+            <!--and t.goods_id not in-->
+            <!--<foreach collection="salesConditionIds" item="salesConditionId" open="(" separator="," close=")">-->
+                <!--#{salesConditionId}-->
+            <!--</foreach>-->
+        <!--</if>-->
+        <if test="catGoods != null and catGoods.size()>0">
+            and t.goods_id in
+            <foreach collection="catGoods" item="index" open="(" separator="," close=")">
+                #{index}
+            </foreach>
+        </if>
+        <if test="req.recommend != null and req.recommend != ''">
+            and t.is_recommend = #{req.recommend}
+        </if>
+        order by t.create_time desc ) o
+        <if test="req.rows != null and req.rows != ''">
+            <choose>
+                <when test="req.offset != null and req.offset != ''">
+                    limit #{req.offset}, #{req.rows}
+                </when>
+                <otherwise>
+                    limit #{req.rows}
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+
+
+    <update id="addProdBuyCount">
+        update tbl_prod_goods
+        set buy_count =
+        case goods_id
+        <foreach collection="request" item="item">
+            when #{item.goodsId} then ifnull(buy_count, 0) + #{item.qty}
+        </foreach>
+        end,
+        modify_time = now()
+        where goods_id in
+        <foreach item="item" index="index" open="(" separator="," close=")" collection="request">
+            #{item.goodsId}
+        </foreach>
+    </update>
+
+    <update id="reduceProdBuyCount">
+        update tbl_prod_goods
+        set buy_count =
+        case goods_id
+        <foreach collection="request" item="item">
+            when #{item.goodsId} then ifnull(buy_count, 0) - #{item.qty}
+        </foreach>
+        end,
+        modify_time = now()
+        where goods_id in
+        <foreach item="item" index="index" open="(" separator="," close=")" collection="request">
+            #{item.goodsId}
+        </foreach>
+    </update>
+
+
+    <update id="updateProdGoodsWithOutBuyCount">
+        update tbl_prod_goods
+        set
+        name = #{name},
+        sn = #{sn},
+        brand_id = #{brandId},
+        type_id = #{typeId},
+        weight = #{weight},
+        state = #{state},
+        intro = #{intro},
+        price = #{price},
+        cost = #{cost},
+        mktprice = #{mktprice},
+        create_time = #{createTime},
+        modify_time = #{modifyTime},
+        view_count = #{viewCount},
+        sord = #{sord},
+        create_by = #{createBy},
+        modify_by = #{modifyBy},
+        simple_name = #{simpleName},
+        min_nim = #{minNim},
+        search_key = #{searchKey},
+        selling_point = #{sellingPoint},
+        region_id = #{regionId},
+        region_name = #{regionName},
+        marketing_begin_time = #{marketingBeginTime},
+        marketing_end_time = #{marketingEndTime},
+        stock_qty = #{stockQty},
+        product_code = #{productCode},
+        duplicate_flag = #{duplicateFlag},
+        max_buy_count = #{maxBuyCount},
+        store_id = #{storeId},
+        is_package = #{isPackage},
+        dispatch_order_id = #{dispatchOrderId},
+        thumbnail = #{thumbnail},
+        after_sale= #{afterSale},
+        tenant_id = #{tenantId},
+        is_recommend = #{isRecommend},
+        turn_on_sku = #{turnOnSku},
+        tax = #{tax},
+        care_flag = #{careFlag},
+        adj_buy_count = #{adjBuyCount},
+        evaluate_audit_mode = #{evaluateAuditMode}
+
+        where goods_id = #{goodsId}
+    </update>
+
+
+    <update id="incrGoodsStockById">
+        update tbl_prod_goods set stock_qty = stock_qty + #{qty}, modify_time = DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%s')
+        where goods_id = #{goodsId}
+    </update>
+
+
+    <select id="qryList4SynGoodsQty" resultType="com.iwhalecloud.retail.offer.entity.ProdGoods">
+        select <include refid="Base_Column_List"></include>
+          from tbl_prod_goods t
+         where t.state = 'C'
+           and now() between marketing_begin_time and marketing_end_time+interval 5 minute
+    </select>
+
+
+    <select id="qryListByStateCAndMarketingEndTime" resultType="java.lang.String">
+        select goods_id
+          from tbl_prod_goods
+         where state = 'C'
+     <![CDATA[ and marketing_end_time <= sysdate() ]]>
+    </select>
+
+    <select id="qryListByStateCAndStateF" resultType="com.iwhalecloud.retail.offer.entity.ProdGoods">
+        select <include refid="Base_Column_List"></include>
+          from tbl_prod_goods t
+         where t.state = 'C' or t.state = 'F'
+    </select>
+
+    <select id="querySaleableGoodsList" resultType="com.iwhalecloud.retail.offer.dto.ProdGoodsDTO">
+        select <include refid="Base_Column_List"></include>
+        from tbl_prod_goods t
+        where t.state = 'C'
+    </select>
+
+    <select id="qryCPSPOfferList" resultType="com.iwhalecloud.retail.offer.dto.resp.CpspQueryOfferResp">
+                select t.goods_id as offerId, t.name as offerName, t.sn as offerCode, t.simple_name, t.type_id as offerType,
+                   t.product_code, p.type_name as offerTypeName,t.price,t.mktprice
+              from  tbl_prod_goods t
+              left join tbl_prod_goods_type p on p.type_id = t.type_id
+             where t.state = 'C'
+               and t.tenant_id = #{req.tenantId}
+               and p.state = 'A'
+         <![CDATA[ and t.marketing_begin_time <= sysdate() ]]>
+         <![CDATA[ and (t.marketing_end_time is null or t.marketing_end_time > sysdate() )]]>
+         <if test="req.offerType != null and req.offerType != ''">
+        and t.type_id = #{req.offerType}
+        </if>
+
+        <if test="req.isRecommend != null and req.isRecommend != ''">
+            and t.is_recommend = #{req.isRecommend}
+        </if>
+
+
+         <if test="req.productCode != null and req.productCode != ''">
+             and t.product_code = #{req.productCode}
+         </if>
+         <if test="req.offerCatgId != null and req.offerCatgId != ''">
+             and t.goods_id in (select goods_id from tbl_prod_goods_cat_mem where state = 'A' and cat_id = #{req.offerCatgId})
+         </if>
+         <if test="req.offerCode != null and req.offerCode != ''">
+             and t.sn = #{req.offerCode}
+         </if>
+        <if test="req.price != null and req.price != ''">
+            and t.price  = #{req.price}
+        </if>
+        <if test="req.startPrice != null and req.startPrice != ''">
+            and t.price  &gt;=	 #{req.startPrice}
+        </if>
+        <if test="req.endPrice != null and req.endPrice != ''">
+            and t.price &lt;=  #{req.endPrice}
+        </if>
+        <if test="req.offerCatgId != null and req.offerCatgId != ''">
+            and exists (select 1 from tbl_prod_goods_cat_mem t2 where t2.cat_id=#{req.offerCatgId} and  t2.goods_id=t.goods_id)
+        </if>
+
+         <if test="req.offerIdList != null and req.offerIdList.size() > 0">
+             and t.goods_id in
+             <foreach collection="req.offerIdList" item="offerId" open="(" separator="," close=")">
+                #{offerId}
+             </foreach>
+         </if>
+         <if test="req.channelCode != null and req.channelCode != ''">
+             and t.goods_id in (
+                select goods_id
+                  from tbl_prod_goods_sales_condition
+                 where state = 'A'
+                   and sales_rule_id = 1
+                   and tenant_id = #{req.tenantId}
+                   and obj_id = #{req.channelCode}
+                )
+             and t.tenant_id = #{req.tenantId}
+         </if>
+         <if test="req.offerName != null and req.offerName != ''">
+             and lower(t.name) like CONCAT('%', lower(#{req.offerName}), '%')
+         </if>
+        <if test="req.sortName != null and req.sortName != '' and req.sortOrder !=null and req.sortOrder != ''">
+            order by ${req.sortName}  ${req.sortOrder}
+        </if>
+    </select>
+
+    <update id="updateStateByGoodsId">
+        update tbl_prod_goods
+           set state = #{state},modify_time = DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%s')
+         where goods_id = #{goodsId}
+    </update>
+
+    <update id="updateByStateCAndMarketingEndTime">
+      update tbl_prod_goods
+         set state = 'E', modify_time = DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%s')
+       where goods_id in
+            <foreach collection="prodGoodsIds" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+    </update>
+
+    <update id="updateEvaluationByGoodsId">
+        update tbl_prod_goods
+           set evaluation_rate = #{evaluationRate}, evaluation_count = #{evaluationCount}, modify_time = DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%s')
+         where goods_id = #{goodsId}
+    </update>
+
+    <update id="updateProGoodsByES">
+        update tbl_prod_goods
+           set modify_time = DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%s')
+         where goods_id = #{goodsId}
+    </update>
+
+    <update id="updateProGoodsStateByStoreId">
+         update tbl_prod_goods
+            set modify_time = sysdate(), modify_by = #{modifyBy}, state = #{state}
+          where store_id = #{storeId}
+            <if test="oldState != null and oldState != ''">
+                and state = #{oldState}
+            </if>
+    </update>
+
+    <select id="queryProGoodsIdByStoreId" resultType="java.lang.String">
+        select goods_id
+          from tbl_prod_goods
+         where store_id = #{storeId}
+           and state = 'C'
+    </select>
+
+    <!--更新商品同步状态-->
+    <update id="updateSyncStateByGoodsId">
+        update tbl_prod_goods
+           set syncState = #{syncState}
+         where goods_id = #{goodsId}
+    </update>
+
+
+</mapper>

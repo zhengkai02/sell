@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.StoreLevelMapper">
+
+
+    <select id="queryStoreLevelPage" resultType="com.iwhalecloud.retail.offer.dto.req.AddStoreLevelReq">
+        select *
+          from tbl_store_level
+         where 1 = 1
+        <if test="req.levelName != null and req.levelName != ''">
+           and lower(level_name) like lower(concat(concat('%', #{req.levelName}), '%'))
+        </if>
+           and state = 'A'
+      order by create_time desc
+    </select>
+
+
+    <update id="updateState">
+        update tbl_store_level
+           set state = 'X',
+               modify_time = now(),
+               modify_by = #{modifyBy}
+         where store_level_id in
+        <foreach collection="storeLevelIds" item="item" separator="," open="(" close=")">
+               #{item}
+        </foreach>
+    </update>
+
+    <select id="queryByLevelName" resultType="com.iwhalecloud.retail.offer.dto.req.AddStoreLevelReq">
+        select *
+          from tbl_store_level
+         where state = 'A'
+           and level_name = #{levelName}
+    </select>
+
+    <select id="countStoreByLevelId" resultType="java.lang.Integer">
+        select count(*)
+          from tbl_store ts
+          join tbl_store_level tsl on tsl.store_level_id = ts.store_level_id
+         where ts.state != 'X'
+           and tsl.store_level_id = #{storeLevelId}
+    </select>
+
+</mapper>

@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.ProdGoodsCatMapper">
+
+    <sql id="prod_goods_cat_column">
+        a.cat_id,a.name,a.cat_type,a.comments,a.store_id,a.parent_id,a.logo,a.cat_order,a.tenant_id, a.invoice_flag, a.invoice_catg_name, a.active_flag
+    </sql>
+
+    <select id="qryProdGoodsCatList" resultType="com.iwhalecloud.retail.offer.entity.ProdGoodsCat">
+        select
+        *
+        from tbl_prod_goods_cat a
+        where a.state = 'A'
+        <if test="catType != null">
+            and a.cat_type = #{catType}
+        </if>
+        <if test='activeFlag != null and activeFlag == "Y"'>
+            and a.active_flag = #{activeFlag}
+        </if>
+        <if test='activeFlag != null and activeFlag == "N"'>
+            and (a.active_flag = #{activeFlag} or a.active_flag is null)
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            and a.tenant_id = #{tenantId}
+        </if>
+        order by a.cat_order
+    </select>
+
+    <select id="qryOutProdGoodsCatList" resultType="com.iwhalecloud.retail.offer.entity.ProdGoodsCat">
+        select a.*
+        from tbl_prod_goods_cat a
+        where a.state = 'A'
+        and a.cat_id not in
+        (select t.cat_id from tbl_tenant_apply_catg t
+        where t.state = 'A'
+        <if test="tenantId != null and tenantId != ''">
+            and t.tenant_id = #{tenantId}
+        </if>
+        )
+        <if test="contextTenantId != null and contextTenantId != ''">
+            and a.tenant_id = #{contextTenantId}
+        </if>
+        <if test="catType != null and catType != ''">
+            and a.cat_type = #{catType}
+        </if>
+        order by a.cat_order
+    </select>
+
+    <select id="qrySameCatNameList" resultType="com.iwhalecloud.retail.offer.entity.ProdGoodsCat">
+        select
+        <include refid="prod_goods_cat_column"/>
+        from tbl_prod_goods_cat a
+        where a.state = 'A'
+        and a.cat_type = #{catType}
+        and a.name = #{catName}
+    </select>
+
+    <select id="qryChildProdGoodsCatList" resultType="com.iwhalecloud.retail.offer.entity.ProdGoodsCat">
+        select
+        <include refid="prod_goods_cat_column"/>
+        from tbl_prod_goods_cat a
+        where a.state = 'A'
+        and a.parent_id = #{parentId}
+        order by a.cat_order
+    </select>
+
+    <select id="qryOfferCatg" resultType="com.iwhalecloud.retail.offer.dto.client.resp.OfferCatgResp">
+        select cat_id as offerCatgId, name as offerCatgName, parent_id as parentId
+        from tbl_prod_goods_cat
+        where state = 'A'
+    </select>
+
+    <select id="qryProdGoodsByGoodsId" resultType="com.iwhalecloud.retail.offer.entity.ProdGoodsCat">
+        select <include refid="prod_goods_cat_column"/>
+          from tbl_prod_goods_cat a
+          join tbl_prod_goods_cat_mem b on b.cat_id = a.cat_id
+         where a.cat_type = 'S'
+           and a.state = 'A'
+           and b.state = 'A'
+           and b.goods_id = #{goodsId}
+    </select>
+
+
+    <select id="listProdGoodsCatByCatTypeIsS" resultType="com.iwhalecloud.retail.offer.entity.ProdGoodsCat">
+        select <include refid="prod_goods_cat_column"/>
+          from tbl_prod_goods_cat a
+        where a.state = 'A'
+        and a.cat_type = 'S'
+        order by FIELD(a.active_flag,'Y', 'N', null), a.cat_order
+    </select>
+
+    <select id="listProdGoodsCatByStoreId" resultType="com.iwhalecloud.retail.offer.entity.ProdGoodsCat">
+        select cat_id, name, comments, store_id, parent_id, logo, cat_order, tenant_id
+          from tbl_store_catg
+         where store_id = #{storeId}
+         and state = 'A'
+         order by cat_order
+    </select>
+
+    <select id="qryGoodBrandByCatgId" resultType="com.iwhalecloud.retail.offer.dto.resp.TblGoodsBrandTenantResp">
+        select b.brand_id, b.brand_name, b.brand_intro, b.state, b.tenant_id
+          from tbl_goods_cat_brand a
+          left join tbl_goods_brand b on a.brand_id = b.brand_id
+          where 1 = 1
+          and a.state = 'A'
+          and b.state <![CDATA[<>]]> 'X'
+          <if test="catId != null and catId != ''">
+              and a.cat_id = #{catId}
+          </if>
+    </select>
+
+    <select id="qryFormatGoodsCatList" resultType="com.iwhalecloud.retail.offer.dto.resp.QryGoodsCatListResp">
+        select *
+          from tbl_prod_goods_cat a
+         where a.state = 'A'
+         <if test="req.catType != null and req.catType != ''">
+            and a.cat_type = #{req.catType}
+         </if>
+         <if test="req.tenantId != null">
+            and a.tenant_id = #{req.tenantId}
+         </if>
+         order by a.cat_order
+    </select>
+
+    <select id="qrySaleRuleObj" resultType="string">
+        select obj_id
+        from tbl_store_rule_inst t
+        where t.state = 'A'
+        and t.rule_id = '2'
+        and t.store_id = #{storeId}
+    </select>
+
+    <select id="qrySaleCatNonCampaignByGoodsId" resultType="com.iwhalecloud.retail.offer.entity.ProdGoodsCat">
+        select <include refid="prod_goods_cat_column"/>
+        from tbl_prod_goods_cat a
+        join tbl_prod_goods_cat_mem b on b.cat_id = a.cat_id
+        where a.state = 'A'
+        and b.state = 'A'
+        and a.cat_type = 'S'
+        and (a.active_flag is null or a.active_flag = 'N')
+        and b.goods_id = #{goodsId}
+    </select>
+
+    <select id="qryMgnCatBySaleCatId" resultType="com.iwhalecloud.retail.offer.entity.ProdGoodsCat">
+        select <include refid="prod_goods_cat_column"/>
+        from tbl_prod_goods_cat a
+        join tbl_prod_goods_cat_rela b on b.manage_cat_id = a.cat_id
+        where a.state = 'A'
+        and b.state = 'A'
+        and b.sale_cat_id = #{saleCatId}
+    </select>
+
+    <select id="qryAllChildMgnCat" resultType="com.iwhalecloud.retail.offer.entity.ProdGoodsCat">
+        select <include refid="prod_goods_cat_column"/>
+        from tbl_prod_goods_cat a
+        where a.state = 'A'
+        and a.cat_type = 'M'
+        and a.parent_id is null
+    </select>
+
+    <select id="selectGoodsCountByCatId" resultType="java.lang.Integer">
+        SELECT
+            count( 1 )
+        FROM
+            tbl_prod_goods_cat a
+            LEFT JOIN tbl_prod_goods_cat_mem b ON b.cat_id = a.cat_id
+            LEFT JOIN tbl_prod_goods c ON b.goods_id = c.goods_id
+        WHERE a.state = 'A'
+            and c.state != 'X'
+            AND a.cat_id = #{ catId  }
+    </select>
+
+    <select id="qryMgnCatByCatId" resultType="com.iwhalecloud.retail.offer.entity.ProdGoodsCat">
+        select *
+          from tbl_prod_goods_cat a
+         where a.state = 'A'
+             and a.cat_id = #{catId}
+    </select>
+
+    <update id="updateMgnCatByCatId">
+        update tbl_prod_goods_cat
+           set invoice_catg_name = #{req.invoiceCatgName}, modify_time = #{req.modifyTime}, modify_by = #{req.modifyBy},create_by= #{req.createBy},create_time= #{req.createTime}
+         where cat_id = #{req.catId}
+    </update>
+
+    <update id="deleteCat">
+        update tbl_prod_goods_cat
+        set state = 'X', modify_by = #{modifyBy}, modify_time = now()
+        where cat_id = #{catId}
+    </update>
+
+</mapper>

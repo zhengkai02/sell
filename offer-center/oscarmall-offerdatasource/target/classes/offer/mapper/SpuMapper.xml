@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.SpuMapper">
+
+
+    <select id="pageSpu" resultType="com.iwhalecloud.retail.offer.dto.resp.PageSpuResp">
+        select spu_id, spu_name, sku_attr_ids, comments
+          from tbl_spu
+         where state = 'A'
+        <if test="req.spuName != null and req.spuName != ''">
+           and lower(spu_name) like lower(concat(concat('%', #{req.spuName}), '%'))
+        </if>
+         order by create_time desc
+    </select>
+
+
+    <update id="updateSkuAttrIdsBySpuId">
+        update tbl_spu
+           set sku_attr_ids = null, modify_time = now(), modify_by = #{modifyBy}
+         where spu_id = #{spuId}
+    </update>
+
+</mapper>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.ProdGoodsSalesConditionMapper">
+
+    <select id="listProdGoodsSalesConditionByGoodsId" resultType="com.iwhalecloud.retail.offer.dto.resp.ProdGoodsSalesConditionResp">
+        select pgsc.*, pgsr.name, pgsr.comments
+          from tbl_prod_goods_sales_condition pgsc
+          join tbl_prod_goods_sales_rule pgsr on pgsr.sales_rule_id = pgsc.sales_rule_id
+         where pgsc.state = 'A'
+         and pgsr.state = 'A'
+         and pgsc.goods_id = #{goodsId}
+    </select>
+
+    <select id="listProdGoodsSalesConditionOneByGoodsId" resultType="java.lang.String">
+        select tcc.contact_channel_name
+          from tbl_prod_goods_sales_condition pgsc
+          join tbl_contact_channel tcc on tcc.contact_channel_id = pgsc.obj_id
+         where pgsc.state = 'A'
+           and pgsc.sales_rule_id = 1
+           and tcc.state = 'A'
+           and pgsc.goods_id = #{goodsId}
+    </select>
+
+    <insert id="addProdGoodsSalesCondition">
+        insert into tbl_prod_goods_sales_condition (cond_id, goods_id, sales_rule_id, obj_id, state, create_by, create_time, moidfy_by, modify_time)
+        values (#{condId}, #{goodsid}, #{salesruleid}, #{objid}, #{state}, #{createBy}, #{createTime}, #{modifyBy}, #{modifyTime})
+    </insert>
+
+    <update id="deleteProdGoodsSalesCondition">
+        update tbl_prod_goods_sales_condition
+         set state = 'X', modify_time = #{modifyTime}, modify_by = #{modifyBy}
+         where goods_id = #{goodsId}
+           and sales_rule_id = #{salesRuleId}
+           and obj_id = #{objId}
+           and state = 'A'
+    </update>
+
+    <update id="deleteProdGoodsSalesConditionByGoodsIdAndSalesRuleId">
+        update tbl_prod_goods_sales_condition
+         set state = 'X', modify_time = now(), modify_by = #{modifyBy}
+         where goods_id = #{goodsId}
+           and sales_rule_id = #{salesRuleId}
+           and state = 'A'
+    </update>
+
+</mapper>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.TblStoreCatgMemMapper">
+
+
+    <select id="qryStoreCatgMem" resultType="com.iwhalecloud.retail.offer.dto.resp.TblStoreCatgMemResp">
+        select *
+        from tbl_store_catg_mem t
+        left join tbl_prod_goods p
+        on t.goods_id = p.goods_id
+        left join  tbl_prod_goods_type pt
+        on p.type_id = pt.type_id
+        left join tbl_store_catg tc
+        on t.cat_id = tc.cat_id
+        where 1 = 1
+        and t.state = 'A'
+        and pt.state = 'A'
+        and tc.state = 'A'
+        and tc.store_id = #{req.storeId}
+        <if test="req.catId != null and req.catId != ''" >
+            and t.cat_Id = #{req.catId}
+        </if>
+        <if test="req.code != null and req.code != ''">
+            and p.sn like  concat("%", #{req.code},"%")
+        </if>
+        <if test="req.catMemId != null and req.catMemId != ''">
+            and t.cat_mem_id = #{req.catMemId}
+        </if>
+
+    </select>
+
+    <update id="deleteStoreCatgMemByGoodsId">
+        update tbl_store_catg_mem
+        set state = 'X', modify_time = now(), modify_by = #{modifyBy}
+        where goods_id = #{goodsId}
+    </update>
+
+    <update id="deleteStoreCatgMemById">
+        update tbl_store_catg_mem
+        set state = 'X', modify_time = now(), modify_by = #{modifyBy}
+        where state = 'A'
+        and cat_mem_id = #{catMemId}
+    </update>
+
+</mapper>

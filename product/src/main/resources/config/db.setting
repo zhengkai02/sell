@@ -1,0 +1,16 @@
+# -------------------------------------------------------------
+# ----- Setting File with UTF8-----
+# ----- 数据库配置文件 -----
+# -------------------------------------------------------------
+
+url = jdbc:mysql://localhost:3306/sell
+user = root
+pass = admin123
+
+## 可选配置
+# 是否在日志中显示执行的SQL
+showSql = true
+# 是否格式化显示的SQL
+formatSql = false
+# 是否显示SQL参数
+showParams = true

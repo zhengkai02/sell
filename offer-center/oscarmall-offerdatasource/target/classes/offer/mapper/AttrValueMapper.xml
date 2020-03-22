@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.AttrValueMapper">
+
+    <select id="queryAttrValueByAttrId" resultType="com.iwhalecloud.retail.offer.entity.AttrValue">
+        select *
+      	  from tbl_attr_value
+	     where attr_id = #{attrId}
+	           and state = 'A'
+    </select>
+
+    <select id="queryCPSPAttrValueByAttrId" resultType="com.iwhalecloud.retail.offer.dto.resp.CpspQueryOfferDetailsAttrResp">
+        select *
+      	  from tbl_attr_value
+	     where attr_id = #{attrId}
+	           and state = 'A'
+    </select>
+
+    <update id="delAttrValueByAttrId">
+        update tbl_attr_value set state = 'X', modify_time = now(), modify_by = #{modifyBy}
+        where attr_id = #{attrId}
+    </update>
+
+</mapper>

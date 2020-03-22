@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.TenantMapper">
+
+    <sql id="prod_goods_cat_column">
+        a.cat_id, a.name, a.cat_type, a.comments, a.store_id, a.parent_id, a.logo, a.cat_order, a.tenant_id
+    </sql>
+
+
+    <select id="listManagementCatIdByTenantId" resultType="java.lang.String">
+        select t.cat_id
+          from tbl_tenant_apply_catg t
+          join tbl_prod_goods_cat a on a.cat_id = t.cat_id
+         where t.state = 'A'
+           and a.state = 'A'
+           and t.tenant_id = #{tenantId}
+    </select>
+
+
+    <select id="listManagementCatByTenantId" resultType="com.iwhalecloud.retail.offer.entity.ProdGoodsCat">
+        select <include refid="prod_goods_cat_column"/>
+        from tbl_tenant_apply_catg t
+        join tbl_prod_goods_cat a on a.cat_id = t.cat_id
+        where t.state = 'A'
+        and a.state = 'A'
+        and t.tenant_id = #{tenantId}
+    </select>
+
+
+    <update id="deleteManagementCatByTenantId" parameterType="com.iwhalecloud.retail.offer.dto.req.AddManagementCatReq">
+        update tbl_tenant_apply_catg
+           set state = 'X', state_date = now(), modify_time = now(), modify_by = #{modifyBy}
+         where state = 'A'
+           and tenant_id = #{tenantId}
+    </update>
+
+</mapper>

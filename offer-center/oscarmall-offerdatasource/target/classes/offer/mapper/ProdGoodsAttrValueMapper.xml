@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.ProdGoodsAttrValueMapper">
+
+
+    <select id="listAttrValueRespByProdGoodsId" resultType="com.iwhalecloud.retail.offer.dto.resp.AttrValueResp">
+        select a.attr_id as attrId, a.attr_name as attrName, a.attr_code as attrCode, a.attr_type as attrType, a.nullable,
+               a.input_type as inputType, a.private_type as privateType, a.private_obj_id as privateObjId,
+               pgav.attr_value as attrValue, pgav.priority, pgav.inherited_flag as inheritedFlag
+          from tbl_prod_goods_attr_value pgav
+          join tbl_attr a on a.attr_id = pgav.attr_id
+         where a.state = 'A'
+           and pgav.state = 'A'
+           and pgav.goods_id = #{goodsId}
+      order by pgav.priority desc
+    </select>
+
+    <select id="listCPSPAttrByProdGoodsId" resultType="com.iwhalecloud.retail.offer.dto.resp.CpspQueryOfferDetailsAttrListResp">
+        select a.attr_id as attrId, a.attr_name as attrName, a.attr_code as attrCode, a.attr_type as attrType, a.input_type as inputType,
+               a.nullable, a.comments, pgav.attr_value as value
+          from tbl_prod_goods_attr_value pgav
+          join tbl_attr a on a.attr_id = pgav.attr_id
+         where a.state = 'A'
+           and pgav.state = 'A'
+           and pgav.goods_id = #{req.offerId}
+         order by pgav.priority desc
+    </select>
+
+    <update id="deleteProdGoodsAttrValue">
+        update tbl_prod_goods_attr_value
+         set state = 'X', modify_time = now(), modify_by = #{modifyBy}
+         where state = 'A'
+           and goods_id =#{goodsId}
+           and attr_id =#{attrId}
+    </update>
+
+    <update id="deleteProdGoodsAttrValueByGoodsId">
+        update tbl_prod_goods_attr_value
+         set state = 'X', modify_time = now(), modify_by = #{modifyBy}
+         where state = 'A'
+         and goods_id =#{goodsId}
+    </update>
+
+
+    <update id="editProdGoodsAttrValue">
+      	update tbl_prod_goods_attr_value
+        <set >
+            attr_value = #{attrValue},
+            modify_time = now(),
+            modify_by = #{modifyBy},
+            <if test="priority != null">
+               priority = #{priority}
+            </if>
+        </set>
+		 where goods_id = #{goodsId}
+		   and attr_id =#{attrId}
+    </update>
+
+
+    <select id="listSkuAttrValueByProdGoodsId" resultType="com.iwhalecloud.retail.offer.dto.resp.SkuAttrValueResp">
+        select pgav.attr_id as attrId, pgav.attr_value as attrValue
+          from tbl_prod_goods_attr_value pgav
+          join tbl_attr a on a.attr_id = pgav.attr_id
+         where a.attr_type = 'C'
+           and pgav.state = 'A'
+           and pgav.goods_id = #{goodsId}
+      order by pgav.priority
+    </select>
+
+    <select id="listSkuAttrValueByProdGoodsIdForMobile" resultType="com.iwhalecloud.retail.offer.dto.resp.SkuAttrValueResp">
+        select pgav.attr_id as attrId, pgav.attr_value as attrValue
+          from tbl_prod_goods_attr_value pgav
+          join tbl_attr a on a.attr_id = pgav.attr_id
+         where a.attr_type = 'C'
+           and pgav.state = 'A'
+           and pgav.goods_id = #{goodsId}
+      order by pgav.priority
+    </select>
+
+</mapper>

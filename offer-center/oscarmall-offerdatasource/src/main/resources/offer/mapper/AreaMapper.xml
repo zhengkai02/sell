@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.AreaMapper">
+
+    <select id="selectListByLevel" resultType="com.iwhalecloud.retail.offer.dto.AreaDTO">
+        select * from tbl_cn_area
+        where state = 'A'
+        and level = #{level}
+    </select>
+
+    <select id="selectListByParentCode" resultType="com.iwhalecloud.retail.offer.dto.AreaDTO">
+        select * from tbl_cn_area
+        where state = 'A'
+        and parent_code = #{parentCode}
+        order by pinyin
+    </select>
+</mapper>

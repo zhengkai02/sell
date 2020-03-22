@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.iwhalecloud.retail.offer.mapper.EvaluationLogMapper">
+
+    <select id="queryLastByObjId" resultType="com.iwhalecloud.retail.offer.entity.EvaluationLog">
+        select *
+          from tbl_evaluation_log
+         where obj_type = 'A'
+           and obj_id = #{objId}
+           and state = 'A'
+      order by log_date desc
+         limit 1
+    </select>
+
+    <select id="pageEvaluationLog" resultType="com.iwhalecloud.retail.offer.dto.resp.PageEvaluationLogResp">
+        SELECT
+            a.log_id,
+            a.obj_type,
+            a.obj_id,
+            a.log_date,
+            a.pre_rate,
+            a.pre_rate_date,
+            a.pre_user_count,
+            a.after_rate,
+            a.after_user_count,
+            a.rate,
+            a.user_count,
+            a.pre_log_id,
+            p.name as name
+        FROM
+            tbl_evaluation_log a
+            LEFT JOIN tbl_prod_goods p ON a.obj_id = p.goods_id
+        WHERE
+            obj_type = #{req.objType}
+            AND obj_id = #{req.objId}
+            AND state = 'A'
+        ORDER BY
+            log_date DESC
+    </select>
+
+    <insert id="insertByJob">
+        insert into tbl_evaluation_log(log_id, obj_type, obj_id, log_date, pre_rate, pre_rate_date, pre_user_count, pre_log_id, rate, user_count, after_rate, after_user_count,create_by,create_time,modify_by,modify_time,state)
+        values (#{req.logId},#{req.objType},#{req.objId},#{req.logDate},#{req.preRate},#{req.preRateDate},#{req.preUserCount},#{req.preLogId},#{req.rate},#{req.userCount},#{req.afterRate},#{req.afterUserCount},#{req.createBy},#{req.createTime},#{req.modifyBy},#{req.modifyTime},#{req.state})
+    </insert>
+
+</mapper>

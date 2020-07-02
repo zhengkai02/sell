@@ -16,7 +16,7 @@
     <properties>
         <java.version>1.8</java.version>
         <spring-cloud.version>Greenwich.SR2</spring-cloud.version>
-        <mysql.version>5.1.6</mysql.version>
+        <mysql.version>8.0.16</mysql.version>
         <jpa.version>1.5.16.RELEASE</jpa.version>
         <lombok.version>1.18.8</lombok.version>
         <openfeign.version>2.1.2.RELEASE</openfeign.version>
